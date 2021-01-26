@@ -1,0 +1,458 @@
+MyCompany 
+
+
+Tue Jan 26 2021
+19:58:25 GMT+0300 (Москва, стандартное время)
+Thank you so much for the time to explain me!
+
+Now I got my answer: Decrease in burst balance is possible to view for storages more than 1TB if volume geometry happens in a way that some of volumes is smaller than 1TB. In this case balance gets used and I see it in UI.
+
+
+Amazon Web Services
+
+
+Tue Jan 26 2021
+14:58:47 GMT+0300 (Москва, стандартное время)
+Was this response helpful? Click here to rate:
+Excellent
+
+
+Translate
+
+Hello,
+
+Thanks for getting back to me. I see that you would like some further clarity on a few things, which I shall address below.
+
+“A. There is burst balance on IOPS limit. It's the one shown in RDS UI. It's applicable only if RDS storage size is less than 1TB.”
+Correct, an RDS instance that has less that 1TB in storage can burst up to 3,000 IOPS for as long as they have the burst balance to do so.
+
+“B. IOPS rate that I see in RDS UI are not real, they are subject of internal submerge if operations are physically contiguos. Which means real IOPS rate is smaller but it will look in graph as high one.”
+The ReadIOPS and WriteIOPS values you see are correct so if you have for example 4,000 read and 2,500 write IOPs then your instance still experiences 6,500 total IOPs as a workload. However, you are correct in the assumption that if the operations are physically contiguous, they can, in some instances, be merged together. I.e. 8 contiguous I/O operations at 32 KiB each count as 1 operation (8×32=256) or 4 contiguous I/O operations at 64 KiB each count as 1 operation (4x64=256).
+
+“C. RDS is based on EBS-Optimized Instances. Bigger instance means bigger allowed throughput.”
+Yes, you can assume this as all the current instance types you can select from the RDS console are also EBS optimised by default. Moreover, you can see baseline and maximum throughput of each instance in this documentation [1].
+
+“D. EBS-Optimized Instance has own burst balance, it's not visible in RDS UI.”
+Not exactly, but I can understand the confusion, the instance can support maximum performance for 30 minutes at least once every 24 hours. This value is based on throughput and not burst balance or IOPs. Therefore, if there is low throughput then your instance will not work at maximum performance.
+
+“E. If EBS burst balance depletes, each 24 hours EBS instance is allowed to work at top throughput speed for 30 minutes”
+Correct, each instance type has a different baseline and maximum throughput (which you can see here [1]). Although, as you have noted the maximum performance can only be utilised once every 24 hours.
+
+“The last unclear part of the puzzle is still the "Burst balance" view in RDS UI.
+- If Burst Balance [A] is not applicable for storage more than 1TB, my assumption is that balance should not be used and should stay 100% all the time.
+- If Burst Balance [A] does not stay 100% all the time for space more than 1TB - AWS users start having questions - "why?" - and it's really hard to get even after requesting tech support.
+- If Burst Balance [A] is inapplicable, and fluctuations visible on graph are more misleading than useful, why would not AWS hide this graph for storage more than 1TB to not confuse users?”
+
+I understand the confusion here, your understanding of burst balance is completely correct i.e. in GP2 volumes of 1TB or above, burst balance become irrelevant as the baseline performance is higher. However, as we have established, your RDS storage is not on one volume but it may be split across multiple volumes. In this situation, there is a possibility that any of the GP2 volumes are not 1TB or above, when this happens you may see fluctuations in the burst balance. To add to this, the use of maximum throughput also coincides with the decrease in burst balance.
+
+The graph is automatically selected regardless of the storage size of the instance. However, if you so wish it can be deselected from the CoudWatch graphs so that you will not have to observe it. 
+
+As for your storage size, as a workaround, you can decrease the storage size of your RDS instance by creating a new RDS instance that has less provisioned storage size. Then, migrate your data into the new RDS instance using one of the following methods:
+* Use the database engine's native dump and restore method.
+* Use AWS Database Migration Service (AWS DMS). 
+
+DB dump and restore
+1. Open the Amazon RDS console, and then choose Databases from the navigation pane.
+2. Choose Create database.
+3. Launch a new Amazon RDS DB instance that has a smaller storage size than your existing DB instance.
+4. Use your database engine's native tools to dump your existing DB instance (the instance you want to decrease in size).
+5. Optionally, you can rename your old DB instance [2], and then name the new DB instance using the old DB instance's name. Or you can reconfigure applications to use the new DB instance's name.
+6. Restore the database in your new DB instance. 
+To restore your database,  you can use the  mysqldump [3] utility which is available for importing data into MySQL/MariaDB engines, or you can use the external replication [4] method for reduced downtime.
+
+Replication with AWS DMS
+You can use AWS DMS to set up homogeneous replication between your two DB instances. For more information, see the following documentation [5].
+
+I hope I was able to clarify things for you. If you have any other questions or concerns please don’t hesitate to reach out and I will be happy to help.
+
+Stay safe and have a great day.
+
+References:
+[1] Amazon EBS–optimized instances - EBS optimized by default  
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html#current 
+[2]Renaming a DB instance
+https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_RenameInstance.html 
+[3]Importing data from a MySQL or MariaDB DB to an Amazon RDS MySQL or MariaDB DB instance
+https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Procedural.Importing.SmallExisting.html 
+[4]Importing data to an Amazon RDS MySQL or MariaDB DB instance with reduced downtime
+https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Procedural.Importing.NonRDSRepl.html 
+[5]Getting started with AWS Database Migration Service
+https://docs.aws.amazon.com/dms/latest/userguide/CHAP_GettingStarted.html 
+
+We value your feedback. Please share your experience by rating this correspondence using the AWS Support Center link at the end of this correspondence. Each correspondence can also be rated by selecting the stars in top right corner of each correspondence within the AWS Support Center.
+
+Best regards,
+Stephaine I.
+Amazon Web Services
+
+===============================================================
+
+To share your experience or contact us again about this case, please return to the AWS Support Center using the following URL: https://console.aws.amazon.com/support/home#/case/?displayId=7866348471&language=en 
+
+Note, this e-mail was sent from an address that cannot accept incoming e-mails.
+To respond to this case, please follow the link above to respond from your AWS Support Center.
+
+===============================================================
+
+AWS Support:
+https://aws.amazon.com/premiumsupport/knowledge-center/ 
+
+AWS Documentation:
+https://docs.aws.amazon.com/ 
+
+AWS Cost Management:
+https://aws.amazon.com/aws-cost-management/ 
+
+AWS Training:
+http://aws.amazon.com/training/ 
+
+AWS Managed Services:
+https://aws.amazon.com/managed-services/ 
+
+
+MyCompany 
+
+
+Sun Jan 24 2021
+17:55:29 GMT+0300 (Москва, стандартное время)
+Hello,
+
+Thank you for the detailed reply that has opened for me the unknown aspects of RDS.
+
+Let me try to summarize some things.
+A. There is burst balance on IOPS limit. It's the one shown in RDS UI. It's applicable only if RDS storage size is less than 1TB.
+B. IOPS rate that I see in RDS UI are not real, they are subject of internal submerge if operations are physically contiguos. Which means real IOPS rate is smaller but it will look in graph as high one.
+C. RDS is based on EBS-Optimized Instances. Bigger instance means bigger allowed throughput.
+D. EBS-Optimized Instance has own burst balance, it's not visible in RDS UI.
+E. If EBS burst balance depletes, each 24 hours EBS instance is allowed to work at top throughput speed for 30 minutes.
+
+Could you confirm the statements?
+
+I overall got what I need to do to make my database faster. It's not capped by storage size or IOPS (as I assumed before). It's capped by network throughput which is selectable with instance size. I actually made a irreversible change in for storage space to go from 1.5TB to 3TB to make instance faster, because I was not aware my bottleneck is network. Thanks for clarifying it.
+
+The last unclear part of the puzzle is still the "Burst balance" view in RDS UI.
+- If Burst Balance [A] is not applicable for storage more than 1TB, my assumption is that balance should not be used and should stay 100% all the time.
+- If Burst Balance [A] does not stay 100% all the time for space more than 1TB - AWS users start having questions - "why?" - and it's really hard to get even after requesting tech support.
+- If Burst Balance [A] is inapplicable, and fluctuations visible on graph are more misleading than useful, why would not AWS hide this graph for storage more than 1TB to not confuse users?
+
+I know it may feel that I go in rounds with this question, I am sorry for your and mine time. This is indication of how clumsy this aspect of RDS works, I feel discomfort for something that is declared one way - seems to work somehow differently.
+
+
+Amazon Web Services
+
+
+Mon Jan 18 2021
+16:49:42 GMT+0300 (Москва, стандартное время)
+Was this response helpful? Click here to rate:
+Good
+
+
+Translate
+
+Hello,
+
+My apologies for the delay in responding. Thanks for getting back to me and thank you for including the attachment. I see you still have a few questions which I shall address below.
+
+“Question1.
+If Burst balance was irrelevant to my case, why would not it stay 100% all the time? I see it's moving, and it does not look it's just random metric that does not apply after I have >1TB disk. If you say "it's moving somehow, don't worry about it, it's not for your case" - please see next question.”
+As mentioned in my previous correspondence Burst Balance does not affect your instance as its volume size is above 1TB, thus (as you know) it has a higher base performance than burst performance. Thus, I shall address your other question.
+
+“Question2.
+>Therefore, there is no way you can “use the burst balance all the time” as it is not relevant to your instance.
+1. much better read and write IOPS, which cumulatively reach 11000 IOPS. Compare it to fact you said I should be capped by 4500 IOPS.
+2. much bigger read and write thoughtputs
+3. Less Queue Depth compared to when after burst credits deplete”
+
+I shall address all three of the above questions together as they are related to one another.
+
+As we have established GP2 volumes larger than 1TiB have a baseline performance that is greater than the burst performance. Therefore, Burst is irrelevant because the baseline performance is better than the 3,000 IOPS burst performance [1]. Therefore, ideally, the RDS instance should provide 4500 IOPS consistently for an infinite period of time and if in case the workload is using more than 4500 IOPS (as shown in the graphs you attached) it could be because of the amount of storage attached to your instance. 
+
+It can then be said that the visual decrease in burst balance could be due to amount of storage, as Amazon RDS automatically stripes across multiple Amazon EBS volumes to enhance performance and if the storage is comprised of multiple EBS volumes striped together, then each volume has its own limits as the ones we show in our documentation are per volume limits.
+
+You can verify this by enabling Enhanced Monitoring[2] on your instance and checking the volume geometry. “Some DB instances use more than one disk for the DB instance's data storage volume. On those DB instances, the Physical Devices graphs show metrics for each one of the disks.”[3]
+
+Additionally, with Amazon EBS when small I/O operations are physically contiguous, Amazon EBS attempts to merge them into a single I/O operation up to the maximum size. 
+
+For example: 
+For SSD volumes, a single 1,024 KiB I/O operation counts as 4 operations (1,024÷256=4), while 8 contiguous I/O operations at 32 KiB each count as 1 operation (8×32=256). On the other hand, 8 random I/O operations at 32 KiB each count as 8 operations. Each I/O operation under 32 KiB counts as 1 operation [4]. Therefore, the increase in performance (and subsequent decrease in burst balance) is likely due to pre merged IOPS (if they were physically contiguous).
+
+Further, analysis of your instance shows that it is using m5.large instance type which is nitro based. Nitro based instances can support maximum performance for 30 minutes at least once every 24 hours. If you have a workload that requires sustained maximum performance for longer than 30 minutes, you may want to select an alternative instance type according to baseline performance as shown in the documentation [5]. For the m5.large the base throughput is 81.25 MB/s, while its maximum throughput is 593.75 MB/s. This means that you instance can support a maximum performance of 593.75MB/s for 30 minutes at least once every 24 hours.
+
+From the graph you shared, you can see brief periods of spikes in where the combination of read and write throughput exceed the baseline (please note that combination of read and write throughput doesn’t have to reach the max performance it just needs to exceed the baseline). 
+
+For example on 2021-01-16 20:44 UTC to 2021-01-16 21:43 UTC the instance was exceeding the baseline consistently. The WriteThroughput (20:44 UTC) spiked to 113,863,482 while at the same time the ReadThroughput spiked to 70,026,560. If you add these two values together you can see that it exceeds the baseline throughput and afterwards, the throughput metrics appears to hit a ceiling as it is being throttled to the baseline and doesn’t go up until this balance is replenished. More information on this can be found in this documentation [6].
+
+Furthermore, you see the same behaviour 24 hours afterwards. This directly coincides with the drop in burst balance. When comparing the two (BurstBalance vs Read&Write Throughput [7]) against each other you can see that when the volume burst balance depletes it starts using the maximum performance for the instance class. 
+
+You had mentioned that performance of your instance increased when burst balance was going down. This was likely not due to the burst balance itself (as it is irrelevant for your storage size) but that the instance was pushing over the base performance (for throughput) of 81.25 MB/s, thus for a 30 minute period your instance was supporting up to a maximum performance of 593.75MB/s. However, since this performance can only happen once every 24 hours you will notice a performance decrease when it was not occurring.
+
+My apologies for the lengthy response but to summarise the above, there are two reasons why you can see an increase in speed on your instance. The first is due to the amount of storage as “some DB instances use more than one disk for the DB instance's data storage volume”. The second is that once every 24 hours (for a 30 minute period) your instance utilises a maximum performance of 593.75MB/s.
+
+I hope the above clarified things for you. Please do let me know if you have additional questions or concerns or would like to discuss things further and I will be more than happy to assist you.
+
+Stay safe and enjoy your day.
+
+References:
+[1] Understanding Burst vs. Baseline Performance with Amazon RDS and GP2
+https://aws.amazon.com/blogs/database/understanding-burst-vs-baseline-performance-with-amazon-rds-and-gp2/ 
+[2] Enhanced Monitoring - Setting up and enabling Enhanced Monitoring  
+https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_Monitoring.OS.html#USER_Monitoring.OS.Enabling 
+[3] Enhanced Monitoring - Viewing Enhanced Monitoring
+https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_Monitoring.OS.html#USER_Monitoring.OS.Viewing 
+[4] I/O characteristics and monitoring 
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-io-characteristics.html 
+[5] Amazon EBS–optimized instances - EBS optimized by default  
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html#current 
+[6]Improving application performance and reducing costs with Amazon EBS-Optimized Instance burst capability
+https://aws.amazon.com/blogs/compute/improving-application-performance-and-reducing-costs-with-amazon-ebs-optimized-instance-burst-capability/ 
+[7]BurstBalance vs Read&Write Throughput
+https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~(metrics~(~(~'AWS*2fRDS~'ReadThroughput~'DBInstanceIdentifier~'MyCompany-mydb)~(~'.~'WriteThroughput~'.~'.)~(~'.~'BurstBalance~'.~'.~(yAxis~'right) ))~stat~'Average~period~60~start~'2021-01-16T10*3a19*3a28.421Z~end~'2021-01-18T10*3a19*3a28.421Z~region~'us-east-1~view~'timeSeries~stacked~false);query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20MyCompany-mydb
+
+We value your feedback. Please share your experience by rating this correspondence using the AWS Support Center link at the end of this correspondence. Each correspondence can also be rated by selecting the stars in top right corner of each correspondence within the AWS Support Center.
+
+Best regards,
+Stephaine I.
+Amazon Web Services
+
+===============================================================
+
+To share your experience or contact us again about this case, please return to the AWS Support Center using the following URL: https://console.aws.amazon.com/support/home#/case/?displayId=7866348471&language=en 
+
+Note, this e-mail was sent from an address that cannot accept incoming e-mails.
+To respond to this case, please follow the link above to respond from your AWS Support Center.
+
+===============================================================
+
+AWS Support:
+https://aws.amazon.com/premiumsupport/knowledge-center/ 
+
+AWS Documentation:
+https://docs.aws.amazon.com/ 
+
+AWS Cost Management:
+https://aws.amazon.com/aws-cost-management/ 
+
+AWS Training:
+http://aws.amazon.com/training/ 
+
+AWS Managed Services:
+https://aws.amazon.com/managed-services/ 
+
+
+MyCompany 
+
+
+Fri Jan 15 2021
+20:01:18 GMT+0300 (Москва, стандартное время)
+Hello,
+Thank you for more detailed answer.
+Sorry, I still have questions.
+
+Question1.
+If Burst balance was irrelevant to my case, why would not it stay 100% all the time? I see it's moving, and it does not look it's just random metric that does not apply after I have >1TB disk. If you say "it's moving somehow, don't worry about it, it's not for your case" - please see next question.
+
+Question2.
+>Therefore, there is no way you can “use the burst balance all the time” as it is not relevant to your instance.
+Could you please look at the new attached image?
+
+There you can see that exactly when burst balance is decreasing - I can see:
+1. much better read and write IOPS, which cumulatively reach 11000 IOPS. Compare it to fact you said I should be capped by 4500 IOPS.
+2. much bigger read and write thoughtputs
+3. Less Queue Depth compared to when after burst credits deplete
+
+I think that it's not a coincidence. I think that AWS RDS has changed something in the term "burst", and it actually applies for drives bigger than 1TB.
+Could you please escalate this request to people who is more involved in AWS RDS internals?
+
+I really see database is working faster and better while balance is going down, but this obscurity of documentation makes me an unhappy AWS user, as I have to just guess and empyrially poke around RDS, instead of knowing exact terms.
+
+
+
+Attachments
+2021-01-15_19-38-46.png
+
+Amazon Web Services
+
+
+Fri Jan 15 2021
+15:47:10 GMT+0300 (Москва, стандартное время)
+Was this response helpful? Click here to rate:
+Average
+
+
+Translate
+
+Hello,
+
+My apologies for my confusion. I shall address your questions below.
+
+Q1) “Why is burst capacity acting weirdly?”
+The burst capacity is acting weirdly because once your volume size is above 1TB it is no longer monitored, hence the weird readings you are seeing on the graph for BurstBalance. As you correctly stated once your volumes are above a certain size (1TiB for gp2), then the burst system is no longer used, and the volume gets whatever performance cap the volume size allows. In your case this would be 4,500 IOPS.
+
+Q2) “How to make the instance use the burst balance all the time?”
+This answer relates to the previous one, wherein, burst IOPS don’t apply to instances using GP2 with over 1TB of storage. Therefore, there is no way you can “use the burst balance all the time” as it is not relevant to your instance.
+
+Q3) "Why do burst activity apply to my database at all? My storage is GP2 1.5 TB. According to AWS docs burst happens only for storage less than 1TB" “It should be IRRELEVANT. _Why do I feel burst at all?_”
+As mentioned above burst IOPS are “irrelevant” because base performance is higher than the burst amount, thus burstIOPS are not relevant to your instance. My apologies for the confusion in regards to this.
+
+To add to this I had a further look into your instance ""MyCompany-mydb" to identify any performance issues and I observed the following: When the ReadIOPS[1] and WriteIOPS[2] go above 4,500IOPS the ReadLatency[3] and WriteLatency[4] spikes to more than 10ms. To add to this you have an extremely high DiskQueueDepth[5] which should be 1 for every 1000 IOPS, and as can be seen from the graph it is significantly larger. As I’m sure you know DiskQueueDepth is the number of IOs waiting in queue to be serviced. Time spent waiting in the queue is a component of latency and service time. Therefore, the spike in ReadIOPS and WriteIOPS has been causing the IOs to wait, which is reflected in the increase in DiskQueueDepth, and the slower speeds you observed on your instance..
+
+Having said this, if you wish, from looking at the mentioned readings above and from you own statement of saying “you can clearly see that database is under heavy load almost non-stop” I would recommend moving from GP2 to IO1 in order to alleviate the strain on your DB instance.
+
+I hope the above information useful and that it cleared things up for you. If you have any other queries please don’t hesitate to ask as I’d be happy to assist you.
+
+Stay safe and enjoy the rest of your day.
+
+References:
+[1]ReadIOPS
+https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~(stat~'Average~period~60~start~'2021-01-10T00*3a00*3a00.000Z~end~'2021-01-14T15*3a23*3a38.000Z~region~'us-east-1~view~'timeSeries~stacked~false~metrics~(~(~'AWS*2fRDS~'ReadIOPS~'DBInstanceIdentifier~'MyCompany-mydb) ));query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20MyCompany-mydb
+[2]WriteIOPS
+https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~(stat~'Average~period~60~start~'2021-01-10T00*3a00*3a00.000Z~end~'2021-01-14T15*3a23*3a38.000Z~region~'us-east-1~view~'timeSeries~stacked~false~metrics~(~(~'AWS*2fRDS~'WriteIOPS~'DBInstanceIdentifier~'MyCompany-mydb) ));query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20MyCompany-mydb
+[3]ReadLatency
+https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~(stat~'Average~period~60~start~'2021-01-10T00*3a00*3a00.000Z~end~'2021-01-14T15*3a23*3a38.000Z~region~'us-east-1~view~'timeSeries~stacked~false~metrics~(~(~'AWS*2fRDS~'ReadLatency~'DBInstanceIdentifier~'MyCompany-mydb) ));query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20MyCompany-mydb
+[4]WriteLatency
+https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~(stat~'Average~period~60~start~'2021-01-10T00*3a00*3a00.000Z~end~'2021-01-14T15*3a23*3a38.000Z~region~'us-east-1~view~'timeSeries~stacked~false~metrics~(~(~'AWS*2fRDS~'WriteLatency~'DBInstanceIdentifier~'MyCompany-mydb) ));query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20MyCompany-mydb
+[5]DiskQueueDepth
+https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~(stat~'Average~period~60~start~'2021-01-10T00*3a00*3a00.000Z~end~'2021-01-14T15*3a23*3a38.000Z~region~'us-east-1~view~'timeSeries~stacked~false~metrics~(~(~'AWS*2fRDS~'DiskQueueDepth~'DBInstanceIdentifier~'MyCompany-mydb) ));query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20MyCompany-mydb
+
+We value your feedback. Please share your experience by rating this correspondence using the AWS Support Center link at the end of this correspondence. Each correspondence can also be rated by selecting the stars in top right corner of each correspondence within the AWS Support Center.
+
+Best regards,
+Stephaine I.
+Amazon Web Services
+
+===============================================================
+
+To share your experience or contact us again about this case, please return to the AWS Support Center using the following URL: https://console.aws.amazon.com/support/home#/case/?displayId=7866348471&language=en 
+
+Note, this e-mail was sent from an address that cannot accept incoming e-mails.
+To respond to this case, please follow the link above to respond from your AWS Support Center.
+
+===============================================================
+
+AWS Support:
+https://aws.amazon.com/premiumsupport/knowledge-center/ 
+
+AWS Documentation:
+https://docs.aws.amazon.com/ 
+
+AWS Cost Management:
+https://aws.amazon.com/aws-cost-management/ 
+
+AWS Training:
+http://aws.amazon.com/training/ 
+
+AWS Managed Services:
+https://aws.amazon.com/managed-services/ 
+
+
+MyCompany 
+
+
+Fri Jan 15 2021
+01:23:24 GMT+0300 (Москва, стандартное время)
+Stephaine,
+
+In fact you did not answer neither of my questions.
+
+Let me try to tell it again, in other words.
+Q1.
+I know what is burst. It's temporal speedup of database in exchange of reducing burst balance. When burst balance gets to 0% - speedup ends.
+However if you look at the attached image, or go check database metrics, you can clearly see that database is under heavy load almost non-stop. Which means that burst balance should be around 0% almost all the time. And I don't see that. Instead, I see that burst balance goes to 100% and just stays there for hours, while database is highly utilized and does need better IOPS. Then rapidly burst balance decreases from 100% to 0% and basically only within this short period I really can see lots better speed. Then again balance somehow goes up, while database working with slow speed.
+That is, I don't get why does not database use balance all the time. It get 1% over time - it should immediately eat it, not collect up till 100%.
+
+Q2. 
+I am quoting your words, while you're quoting official docs.
+> The documentation states that “burst is irrelevant (for gp2 volume larger than 1 TiB) because the baseline performance is better than the 3,000 IOPS burst performance”
+My baseline performance is 4500. Its more than 3000. It should be IRRELEVANT. _Why do I feel burst at all?_
+
+
+Amazon Web Services
+
+
+Thu Jan 14 2021
+19:13:54 GMT+0300 (Москва, стандартное время)
+Was this response helpful? Click here to rate:
+Below Average
+
+
+Translate
+
+Hello,
+
+I hope you’re well. Thank you for contacting AWS Premium support. My name is Stephaine and I will be assisting you with your case.
+
+I understand from your correspondence that you have some concerns about the burst capacity on your DB instance “MyCompany-mydb” and would like some clarity on this. Please correct me if I have misunderstood.
+
+First I had a look at you instance “MyCompany-mydb” I can confirm that it is healthy with no network issues. I also looked at the ReadIOPS[1] and WriteIOPS[2] on the instance. The spikes in the Read and Write IOPS correlate directly with the decrease in the BurstBalance[3].
+
+The reason the BurstBalance has been decreasing the way it has is because you don’t have enough provisioned IOPS on your instance to handle the workload. You have 4,500 provisioned IOPS on your instance (1,500 GiB x 3). “Baseline I/O performance for General Purpose SSD storage is 3 IOPS for each GiB, with a minimum of 100 IOPS” [4]. 
+
+To get the total number of IOPS used you add Read and Write IOPS together. For example, your ReadIOPS spiked to over 7,000 on 21:35 13-01-2021 UTC while the WriteIOPS also spiked to over 4,000 around the same period. This means that your system would have needed over 10,000 provisioned IOPS. However, as mentioned above you have 4,500 provisioned IOPS; hence, your instance uses its BurstBalance in order to handle the workload. 
+
+The documentation states that “burst is irrelevant (for gp2 volume larger than 1 TiB) because the baseline performance is better than the 3,000 IOPS burst performance” [5]. The documentation states this because (in your case) your baseline performance is 4,500 IOPS which is higher than 3,000 IOPS burst.
+
+If you wish for your BurstBalance to not be depleted then you could increase your provisioned IOPS for your instance.
+
+I hope you found the above information to be helpful. Please feel free to reach out to me to let me know if I missed anything or if you have any more questions or concerns and I will be happy to help you.
+
+Stay safe and have a great day.
+
+References:
+[1]ReadIOPS
+https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~(stat~'Average~period~60~start~'2021-01-10T00*3a00*3a00.000Z~end~'2021-01-14T15*3a23*3a38.000Z~region~'us-east-1~view~'timeSeries~stacked~false~metrics~(~(~'AWS*2fRDS~'ReadIOPS~'DBInstanceIdentifier~'MyCompany-mydb) ));query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20MyCompany-mydb
+[2]WriteIOPS
+https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~(stat~'Average~period~60~start~'2021-01-10T00*3a00*3a00.000Z~end~'2021-01-14T15*3a23*3a38.000Z~region~'us-east-1~view~'timeSeries~stacked~false~metrics~(~(~'AWS*2fRDS~'WriteIOPS~'DBInstanceIdentifier~'MyCompany-mydb) ));query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20MyCompany-mydb
+[3]BurstBalance
+https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~(stat~'Average~period~60~start~'2021-01-10T00*3a00*3a00.000Z~end~'2021-01-14T15*3a23*3a38.000Z~region~'us-east-1~view~'timeSeries~stacked~false~metrics~(~(~'AWS*2fRDS~'BurstBalance~'DBInstanceIdentifier~'MyCompany-mydb) ));query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20MyCompany-mydb
+[4]General Purpose SSD storage
+https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Storage.html#Concepts.Storage.GeneralSSD 
+[5]Understanding Burst vs. Baseline Performance with Amazon RDS and GP2
+https://aws.amazon.com/blogs/database/understanding-burst-vs-baseline-performance-with-amazon-rds-and-gp2/ 
+
+We value your feedback. Please share your experience by rating this correspondence using the AWS Support Center link at the end of this correspondence. Each correspondence can also be rated by selecting the stars in top right corner of each correspondence within the AWS Support Center.
+
+Best regards,
+Stephaine I.
+Amazon Web Services
+
+===============================================================
+
+To share your experience or contact us again about this case, please return to the AWS Support Center using the following URL: https://console.aws.amazon.com/support/home#/case/?displayId=7866348471&language=en 
+
+Note, this e-mail was sent from an address that cannot accept incoming e-mails.
+To respond to this case, please follow the link above to respond from your AWS Support Center.
+
+===============================================================
+
+AWS Support:
+https://aws.amazon.com/premiumsupport/knowledge-center/ 
+
+AWS Documentation:
+https://docs.aws.amazon.com/ 
+
+AWS Cost Management:
+https://aws.amazon.com/aws-cost-management/ 
+
+AWS Training:
+http://aws.amazon.com/training/ 
+
+AWS Managed Services:
+https://aws.amazon.com/managed-services/ 
+
+
+MyCompany 
+
+
+Thu Jan 14 2021
+17:41:45 GMT+0300 (Москва, стандартное время)
+Hello,
+Our production database is acting weirdly regarding burst capacity.
+RDS instance is "MyCompany-mydb"
+
+1. Most of time I see that burst capacity is not used, it shows 100% and database is slow.
+2. Sometimes burst capacity rapidly drops to 100 -> 0  and within such periods all speed metrics are very good: queue depth, read/write IOPS, read/write latencies.
+
+I have questions:
+1. Why is burst capacity is acting so weirdly and how to change things so that burst balance really goes down to 0 at all times, so I get full burst speed?
+2. Why do burst activity apply to my database at all? My storage is GP2 1.5 TB. According to AWS docs burst happens only for storage less than 1TB: https://aws.amazon.com/blogs/database/understanding-burst-vs-baseline-performance-with-amazon-rds-and-gp2/ 
+DB Instance(s): MyCompany-mydb
